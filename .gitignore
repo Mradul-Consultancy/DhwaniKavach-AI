@@ -1,0 +1,17 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Large Datasets and Media
+audio/
+spectrograms/
+
+# IDE files
+.vscode/
+.idea/
+
+# Virtual environments
+venv/
+env/
+.env/

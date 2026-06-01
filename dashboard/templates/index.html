@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Acoustic Machine Fault Detection and Monitoring System — AI-powered anomaly detection using convolutional autoencoders with proper ML evaluation metrics">
+    <title>Acoustic Machine Fault Detection and Monitoring System — AI Anomaly Detection</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>🔊</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+    <!-- ═══ Ambient Background ═══ -->
+    <div class="ambient-bg">
+        <div class="ambient-orb ambient-orb-1"></div>
+        <div class="ambient-orb ambient-orb-2"></div>
+        <div class="ambient-orb ambient-orb-3"></div>
+    </div>
+
+    <!-- ═══ HEADER ═══ -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-group">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="20" cy="20" r="18" stroke="url(#logoGrad)" stroke-width="2" opacity="0.3"/>
+                        <g class="sound-waves">
+                            <rect x="8" y="16" width="2.5" height="8" rx="1.25" fill="url(#logoGrad)" class="wave-bar wave-bar-1"/>
+                            <rect x="13" y="12" width="2.5" height="16" rx="1.25" fill="url(#logoGrad)" class="wave-bar wave-bar-2"/>
+                            <rect x="18" y="8" width="2.5" height="24" rx="1.25" fill="url(#logoGrad)" class="wave-bar wave-bar-3"/>
+                            <rect x="23" y="12" width="2.5" height="16" rx="1.25" fill="url(#logoGrad)" class="wave-bar wave-bar-4"/>
+                            <rect x="28" y="16" width="2.5" height="8" rx="1.25" fill="url(#logoGrad)" class="wave-bar wave-bar-5"/>
+                        </g>
+                        <defs>
+                            <linearGradient id="logoGrad" x1="0" y1="0" x2="40" y2="40">
+                                <stop offset="0%" stop-color="#00d4aa"/>
+                                <stop offset="100%" stop-color="#7c5cfc"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <div class="logo-text">
+                    <h1>Acoustic Machine Fault Detection and Monitoring System</h1>
+                    <p class="logo-subtitle">Convolutional Autoencoder · Unsupervised Anomaly Detection</p>
+                </div>
+            </div>
+            <div class="header-status">
+                <div class="status-chip" id="modelStatus">
+                    <span class="status-dot"></span>
+                    <span class="status-text" id="statusText">Checking…</span>
+                </div>
+                <div class="status-chip device-chip">
+                    <span class="device-icon">⚡</span>
+                    <span id="deviceText">—</span>
+                </div>
+                <div class="status-chip device-chip">
+                    <span class="device-icon">🧠</span>
+                    <span id="paramText">—</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ═══ MAIN CONTENT ═══ -->
+    <main class="main-content">
+
+        <!-- ──────────────────────────────────────────────────────────────
+             SECTION 1: Architecture Pipeline
+             ────────────────────────────────────────────────────────────── -->
+        <section class="section" id="archSection">
+            <div class="arch-card glass-card">
+                <h2 class="section-title"><span class="title-icon">🧠</span>How It Works</h2>
+                <div class="arch-pipeline">
+                    <div class="pipe-step">
+                        <div class="pipe-icon">🎵</div>
+                        <div class="pipe-label">Audio Input</div>
+                        <div class="pipe-desc">WAV / MP3 / FLAC</div>
+                    </div>
+                    <div class="pipe-arrow">→</div>
+                    <div class="pipe-step">
+                        <div class="pipe-icon">📊</div>
+                        <div class="pipe-label">Mel Spectrogram</div>
+                        <div class="pipe-desc">64 mel bands · 16kHz</div>
+                    </div>
+                    <div class="pipe-arrow">→</div>
+                    <div class="pipe-step pipe-highlight">
+                        <div class="pipe-icon">🔬</div>
+                        <div class="pipe-label">AutoEncoder</div>
+                        <div class="pipe-desc">Encode → Decode</div>
+                    </div>
+                    <div class="pipe-arrow">→</div>
+                    <div class="pipe-step">
+                        <div class="pipe-icon">📐</div>
+                        <div class="pipe-label">MSE Loss</div>
+                        <div class="pipe-desc">Reconstruction Error</div>
+                    </div>
+                    <div class="pipe-arrow">→</div>
+                    <div class="pipe-step pipe-verdict">
+                        <div class="pipe-icon">✅</div>
+                        <div class="pipe-label">Verdict</div>
+                        <div class="pipe-desc">Normal / Anomaly</div>
+                    </div>
+                </div>
+                <div class="arch-detail">
+                    <p><strong>Key Insight:</strong> The autoencoder is trained <em>only on normal machine sounds</em>. 
+                    It learns to compress and reconstruct familiar audio patterns. When an anomalous sound is fed in, 
+                    the reconstruction error spikes — revealing potential faults <em>without needing labeled fault data</em> 
+                    (unsupervised anomaly detection).</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ──────────────────────────────────────────────────────────────
+             SECTION 2: Upload & Analyze
+             ────────────────────────────────────────────────────────────── -->
+        <section class="section" id="uploadSection">
+            <div class="upload-card glass-card">
+                <h2 class="section-title"><span class="title-icon">🎤</span>Analyze Audio</h2>
+
+                <!-- Input Mode Toggle -->
+                <div class="mode-toggle">
+                    <button class="mode-btn active" data-mode="single">📄 Single File</button>
+                    <button class="mode-btn" data-mode="batch">📁 Batch Upload</button>
+                    <button class="mode-btn" data-mode="mic">🎙️ Microphone</button>
+                </div>
+
+                <!-- Single File -->
+                <div class="input-mode" id="modeSingle">
+                    <div class="dropzone" id="dropzone">
+                        <input type="file" id="fileInput" accept=".wav,.mp3,.flac,.ogg,.m4a" hidden>
+                        <div class="dropzone-content">
+                            <div class="dropzone-icon">
+                                <svg viewBox="0 0 64 64" fill="none">
+                                    <path d="M32 8v36M18 30l14 14 14-14" stroke="url(#uploadGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M8 48v4a4 4 0 004 4h40a4 4 0 004-4v-4" stroke="url(#uploadGrad)" stroke-width="3" stroke-linecap="round"/>
+                                    <defs>
+                                        <linearGradient id="uploadGrad" x1="8" y1="8" x2="56" y2="56">
+                                            <stop offset="0%" stop-color="#00d4aa"/>
+                                            <stop offset="100%" stop-color="#7c5cfc"/>
+                                        </linearGradient>
+                                    </defs>
+                                </svg>
+                            </div>
+                            <p class="dropzone-text">Drop your audio file here</p>
+                            <p class="dropzone-subtext">or <span class="dropzone-browse">browse files</span></p>
+                            <p class="dropzone-formats">WAV · MP3 · FLAC · OGG · M4A</p>
+                        </div>
+                    </div>
+                    <div class="file-info hidden" id="fileInfo">
+                        <span class="file-icon">🎵</span>
+                        <span class="file-name" id="fileName">—</span>
+                        <span class="file-size" id="fileSize">—</span>
+                        <button class="btn-clear" id="clearFile" title="Remove">✕</button>
+                    </div>
+                    <button class="btn-analyze" id="analyzeBtn" disabled>
+                        <span class="btn-text" id="btnText">Analyze Sound</span>
+                        <span class="btn-loader hidden" id="btnLoader"><span class="spinner"></span>Processing…</span>
+                    </button>
+                </div>
+
+                <!-- Batch Upload -->
+                <div class="input-mode hidden" id="modeBatch">
+                    <div class="dropzone" id="dropzoneBatch">
+                        <input type="file" id="fileInputBatch" accept=".wav,.mp3,.flac,.ogg,.m4a" multiple hidden>
+                        <div class="dropzone-content">
+                            <div class="dropzone-icon">
+                                <svg viewBox="0 0 64 64" fill="none">
+                                    <path d="M32 8v36M18 30l14 14 14-14" stroke="url(#uploadGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M8 48v4a4 4 0 004 4h40a4 4 0 004-4v-4" stroke="url(#uploadGrad)" stroke-width="3" stroke-linecap="round"/>
+                                </svg>
+                            </div>
+                            <p class="dropzone-text">Drop multiple audio files</p>
+                            <p class="dropzone-subtext">or <span class="dropzone-browse">browse</span> · select multiple at once</p>
+                            <p class="dropzone-formats">WAV · MP3 · FLAC · OGG · M4A</p>
+                        </div>
+                    </div>
+                    <div class="file-info hidden" id="batchInfo">
+                        <span class="file-icon">📁</span>
+                        <span class="file-name" id="batchCount">0 files selected</span>
+                        <button class="btn-clear" id="clearBatch">✕</button>
+                    </div>
+                    <button class="btn-analyze" id="batchBtn" disabled>
+                        <span class="btn-text" id="batchBtnText">Analyze All</span>
+                        <span class="btn-loader hidden" id="batchBtnLoader"><span class="spinner"></span>Processing…</span>
+                    </button>
+                </div>
+
+                <!-- Microphone -->
+                <div class="input-mode hidden" id="modeMic">
+                    <div class="mic-area">
+                        <div class="mic-ring" id="micRing">
+                            <div class="mic-emoji">🎙️</div>
+                        </div>
+                        <p class="mic-status" id="micStatus">Click to start recording</p>
+                        <p class="mic-timer" id="micTimer">00:00</p>
+                        <div class="mic-controls">
+                            <button class="btn-mic-start" id="micStartBtn"><span>⏺</span> Start Recording</button>
+                            <button class="btn-mic-stop hidden" id="micStopBtn"><span>⏹</span> Stop & Analyze</button>
+                        </div>
+                        <p class="mic-hint">Auto-stops at 5 seconds · 16kHz sample rate</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ── Loading ── -->
+        <section class="section hidden" id="loadingSection">
+            <div class="loading-card glass-card">
+                <div class="loading-animation">
+                    <div class="loading-wave">
+                        <span></span><span></span><span></span><span></span><span></span>
+                        <span></span><span></span><span></span><span></span><span></span>
+                    </div>
+                </div>
+                <p class="loading-text">Analyzing audio pattern…</p>
+                <p class="loading-subtext">Running inference through the convolutional autoencoder</p>
+            </div>
+        </section>
+
+        <!-- ──────────────────────────────────────────────────────────────
+             SECTION 3: Single File Results
+             ────────────────────────────────────────────────────────────── -->
+        <section class="section hidden" id="resultsSection">
+
+            <!-- Verdict Banner -->
+            <div class="verdict-banner glass-card" id="verdictBanner">
+                <div class="verdict-icon" id="verdictIcon">✅</div>
+                <div class="verdict-text">
+                    <h2 id="verdictTitle">NORMAL</h2>
+                    <p id="verdictDesc">Sound matches expected machine patterns</p>
+                </div>
+                <div class="verdict-file" id="verdictFile">—</div>
+            </div>
+
+            <!-- Metrics Grid -->
+            <div class="metrics-grid">
+                <!-- Accuracy Gauge -->
+                <div class="metric-card glass-card gauge-card">
+                    <h3 class="metric-title">Reconstruction Accuracy</h3>
+                    <div class="gauge-container">
+                        <svg viewBox="0 0 200 200" class="gauge-svg">
+                            <defs>
+                                <linearGradient id="gaugeGrad" x1="0" y1="0" x2="200" y2="200" gradientUnits="userSpaceOnUse">
+                                    <stop offset="0%" stop-color="#00d4aa"/>
+                                    <stop offset="100%" stop-color="#7c5cfc"/>
+                                </linearGradient>
+                            </defs>
+                            <circle cx="100" cy="100" r="85" class="gauge-bg"/>
+                            <circle cx="100" cy="100" r="85" class="gauge-fill" id="gaugeFill"
+                                    stroke-dasharray="534" stroke-dashoffset="534"/>
+                        </svg>
+                        <div class="gauge-value">
+                            <span class="gauge-number" id="gaugeNumber">0</span>
+                            <span class="gauge-unit">%</span>
+                        </div>
+                    </div>
+                    <p class="gauge-hint">Higher = more similar to training data</p>
+                </div>
+
+                <!-- Loss Card -->
+                <div class="metric-card glass-card">
+                    <h3 class="metric-title">Reconstruction Loss</h3>
+                    <div class="metric-value" id="lossValue">—</div>
+                    <div class="metric-label">Mean Squared Error</div>
+                    <div class="metric-bar-container">
+                        <div class="metric-bar">
+                            <div class="metric-bar-fill" id="lossBar"></div>
+                            <div class="metric-bar-threshold" id="lossThreshold"></div>
+                        </div>
+                        <div class="metric-bar-labels">
+                            <span>0</span>
+                            <span class="threshold-label" id="thresholdLabel">Threshold</span>
+                            <span>0.1</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Info Card -->
+                <div class="metric-card glass-card info-card">
+                    <h3 class="metric-title">Analysis Details</h3>
+                    <div class="info-grid">
+                        <div class="info-row"><span class="info-key">File</span><span class="info-val" id="infoFile">—</span></div>
+                        <div class="info-row"><span class="info-key">Threshold</span><span class="info-val" id="infoThreshold">—</span></div>
+                        <div class="info-row"><span class="info-key">Device</span><span class="info-val" id="infoDevice">—</span></div>
+                        <div class="info-row"><span class="info-key">Sample Rate</span><span class="info-val">16,000 Hz</span></div>
+                        <div class="info-row"><span class="info-key">Mel Bands</span><span class="info-val">64</span></div>
+                        <div class="info-row"><span class="info-key">Duration</span><span class="info-val">5 sec</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Threshold Slider -->
+            <div class="threshold-card glass-card">
+                <h3 class="metric-title">Interactive Threshold</h3>
+                <p class="threshold-desc">Adjust the decision boundary to see how it affects the classification verdict in real-time</p>
+                <div class="threshold-slider-wrap">
+                    <input type="range" id="threshSlider" min="0" max="0.1" step="0.001" value="0.035" class="threshold-slider">
+                    <div class="threshold-values">
+                        <span>0.000</span>
+                        <span class="threshold-current" id="threshCurrent">0.035</span>
+                        <span>0.100</span>
+                    </div>
+                </div>
+                <div class="threshold-result" id="threshResult">
+                    At threshold <strong id="trThresh">0.035</strong>: 
+                    <span id="trVerdict" class="tr-verdict tr-normal">NORMAL</span>
+                </div>
+            </div>
+
+            <!-- Waveform -->
+            <div class="viz-card glass-card">
+                <h3 class="section-title"><span class="title-icon">〰️</span>Audio Waveform</h3>
+                <div class="viz-image-container">
+                    <img id="waveformImg" alt="Audio waveform">
+                </div>
+            </div>
+
+            <!-- Spectrogram Comparison -->
+            <div class="spec-comparison">
+                <div class="viz-card glass-card">
+                    <h3 class="section-title"><span class="title-icon">🔵</span>Original Spectrogram</h3>
+                    <div class="viz-image-container">
+                        <img id="originalSpecImg" alt="Original spectrogram">
+                    </div>
+                </div>
+                <div class="viz-card glass-card">
+                    <h3 class="section-title"><span class="title-icon">🟣</span>Reconstructed Spectrogram</h3>
+                    <div class="viz-image-container">
+                        <img id="reconSpecImg" alt="Reconstructed spectrogram">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Error Heatmap -->
+            <div class="viz-card glass-card">
+                <h3 class="section-title"><span class="title-icon">🔥</span>Reconstruction Error Heatmap</h3>
+                <p class="viz-desc">Brighter regions indicate higher reconstruction error — potential anomaly locations in the frequency-time domain.</p>
+                <div class="viz-image-container">
+                    <img id="errorMapImg" alt="Error heatmap">
+                </div>
+            </div>
+
+            <div class="center-action">
+                <button class="btn-new" id="newAnalysisBtn"><span>↻</span> Analyze Another Sound</button>
+            </div>
+        </section>
+
+        <!-- ──────────────────────────────────────────────────────────────
+             SECTION 3b: Batch Results
+             ────────────────────────────────────────────────────────────── -->
+        <section class="section hidden" id="batchResultsSection">
+            <div class="batch-summary glass-card">
+                <h3 class="section-title"><span class="title-icon">📊</span>Batch Analysis Results</h3>
+                <div class="batch-stats">
+                    <div class="batch-stat"><span class="bs-num" id="bsTotal">0</span><span class="bs-label">Total</span></div>
+                    <div class="batch-stat bs-normal-stat"><span class="bs-num" id="bsNormal">0</span><span class="bs-label">Normal</span></div>
+                    <div class="batch-stat bs-anomaly-stat"><span class="bs-num" id="bsAnomaly">0</span><span class="bs-label">Anomaly</span></div>
+                    <div class="batch-stat bs-error-stat"><span class="bs-num" id="bsErrors">0</span><span class="bs-label">Errors</span></div>
+                </div>
+            </div>
+            <div class="batch-table-wrap glass-card">
+                <table class="batch-table">
+                    <thead>
+                        <tr><th>#</th><th>File</th><th>Loss (MSE)</th><th>Accuracy</th><th>Verdict</th></tr>
+                    </thead>
+                    <tbody id="batchTableBody"></tbody>
+                </table>
+            </div>
+            <div class="center-action">
+                <button class="btn-new" id="newBatchBtn"><span>↻</span> New Batch Analysis</button>
+            </div>
+        </section>
+
+        <!-- ── Error Panel ── -->
+        <section class="section hidden" id="errorSection">
+            <div class="error-card glass-card">
+                <div class="error-icon">⚠️</div>
+                <h3>Analysis Failed</h3>
+                <p id="errorMessage">An error occurred.</p>
+                <button class="btn-new" id="errorRetryBtn">Try Again</button>
+            </div>
+        </section>
+
+        
+
+    </main>
+
+    <!-- ═══ FOOTER ═══ -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p>Acoustic Machine Fault Detection and Monitoring System · Convolutional Autoencoder · Unsupervised Anomaly Detection</p>
+            <p class="footer-tech">PyTorch · Flask · ESC-50 Dataset · Mel Spectrogram · ROC/AUC Analysis</p>
+        </div>
+    </footer>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
