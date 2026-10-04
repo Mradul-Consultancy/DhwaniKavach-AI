@@ -1,5 +1,5 @@
 """
-Central configuration for Acoustic Machine Fault Detection and Monitoring System.
+Central configuration for DhwaniKavach AI (ध्वनिकवच).
 
 All hyperparameters, paths, and constants are defined here.
 No other file should contain hardcoded values — import from this module.

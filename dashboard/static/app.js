@@ -172,6 +172,60 @@
             threshCurrent.textContent = val.toFixed(3);
             updateThresholdVerdict(val);
         });
+
+        // Edge ONNX Export Button
+        const btnExportOnnx = $("#btnExportOnnx");
+        if (btnExportOnnx) {
+            btnExportOnnx.addEventListener("click", async () => {
+                const onnxText = $("#onnxStatusText");
+                onnxText.textContent = "Exporting…";
+                try {
+                    const res = await fetch("/api/export-onnx", { method: "POST" });
+                    const d = await res.json();
+                    if (d.success) {
+                        onnxText.textContent = `ONNX (${d.size_kb} KB)`;
+                        alert(`ONNX Model Exported!\nPath: ${d.onnx_path}\nReady for Edge Gateways (Raspberry Pi, NVIDIA Jetson).`);
+                    } else {
+                        throw new Error(d.error);
+                    }
+                } catch (err) {
+                    onnxText.textContent = "Export Failed";
+                    alert("ONNX Export: " + err.message);
+                }
+            });
+        }
+
+        // Calibrate Baseline Button
+        const btnCalibrate = $("#btnCalibrateBaseline");
+        if (btnCalibrate) {
+            btnCalibrate.addEventListener("click", async () => {
+                if (!currentLoss) return;
+                const confirmCalib = confirm(`Calibrate dynamic threshold using current loss (${currentLoss.toFixed(5)}) as normal baseline reference?`);
+                if (!confirmCalib) return;
+
+                try {
+                    const res = await fetch("/api/calibrate", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            losses: [currentLoss * 0.9, currentLoss, currentLoss * 1.1],
+                            method: "sigma",
+                            k: 3.0
+                        })
+                    });
+                    const d = await res.json();
+                    if (d.success) {
+                        currentThreshold = d.new_threshold;
+                        threshSlider.value = currentThreshold;
+                        threshCurrent.textContent = currentThreshold.toFixed(3);
+                        updateThresholdVerdict(currentThreshold);
+                        alert(`Baseline Calibrated!\nNew Dynamic Threshold: ${d.new_threshold.toFixed(5)}`);
+                    }
+                } catch (err) {
+                    alert("Calibration error: " + err.message);
+                }
+            });
+        }
     }
 
     async function checkHealth() {
@@ -379,10 +433,42 @@
 
         verdictBanner.classList.remove("normal", "anomaly");
         verdictBanner.classList.add(isAnomaly ? "anomaly" : "normal");
-        verdictIcon.textContent = isAnomaly ? "🚨" : "✅";
+        verdictIcon.textContent = data.severity === "CRITICAL" ? "🚨" : (data.severity === "WARNING" ? "⚠️" : "✅");
         verdictTitle.textContent = data.verdict;
-        verdictDesc.textContent = isAnomaly ? "High reconstruction error — deviates from normal patterns" : "Low reconstruction error — matches expected patterns";
+        verdictDesc.textContent = data.status_summary || (isAnomaly ? "High reconstruction error — deviates from normal patterns" : "Low reconstruction error — matches expected patterns");
         verdictFile.textContent = data.filename;
+
+        // Populate Industrial Diagnostic Card
+        const diagStatusSummary = $("#diagStatusSummary");
+        const diagActionText = $("#diagActionText");
+        const severityBadge = $("#severityBadge");
+        const actionBox = $("#actionBox");
+
+        if (diagStatusSummary && data.status_summary) {
+            diagStatusSummary.textContent = data.status_summary;
+        }
+        if (diagActionText && data.recommended_action) {
+            diagActionText.textContent = data.recommended_action;
+        }
+        if (severityBadge && data.severity) {
+            severityBadge.textContent = data.severity;
+            severityBadge.style.color = data.severity_color || "#00d4aa";
+            severityBadge.style.borderColor = data.severity_color || "#00d4aa";
+            severityBadge.style.background = (data.severity_color || "#00d4aa") + "22";
+        }
+        if (actionBox && data.severity_color) {
+            actionBox.style.borderLeftColor = data.severity_color;
+        }
+
+        // Frequency band errors
+        if (data.band_analysis) {
+            const bLow = $("#bandLowErr");
+            const bMid = $("#bandMidErr");
+            const bHigh = $("#bandHighErr");
+            if (bLow && data.band_analysis.low) bLow.textContent = data.band_analysis.low.error.toFixed(5);
+            if (bMid && data.band_analysis.mid) bMid.textContent = data.band_analysis.mid.error.toFixed(5);
+            if (bHigh && data.band_analysis.high) bHigh.textContent = data.band_analysis.high.error.toFixed(5);
+        }
 
         const acc = Math.max(0, Math.min(100, data.accuracy));
         const circ = 2 * Math.PI * 85;

@@ -81,21 +81,30 @@ def predict_anomaly(
     with torch.no_grad():
         reconstruction = model(spectrogram)
         loss = nn.functional.mse_loss(reconstruction, spectrogram)
-        loss_val = loss.item()
+        loss_val = float(loss.item())
         accuracy = (1 - (loss_val ** 0.5)) * 100
 
-    is_anomaly = loss_val > threshold
+    from src.inference.diagnostics import IndustrialDiagnosticEngine
+    engine = IndustrialDiagnosticEngine(sample_rate=config.SAMPLE_RATE, n_mels=config.N_MELS)
+    report = engine.analyze(spectrogram, reconstruction, threshold=threshold)
+
     result = {
         "file": os.path.basename(file_path),
         "loss": loss_val,
         "accuracy": accuracy,
-        "is_anomaly": is_anomaly,
+        "threshold": threshold,
+        "is_anomaly": loss_val > threshold,
+        "severity": report.severity,
+        "status_summary": report.status_summary,
+        "recommended_action": report.recommended_action,
+        "dominant_band": report.dominant_fault_band,
+        "band_analysis": report.band_analysis,
     }
 
     logger.info(
-        "Prediction for %s — Loss: %.4f, Accuracy: %.2f%%, Result: %s",
-        result["file"], loss_val, accuracy,
-        "ANOMALY" if is_anomaly else "NORMAL",
+        "Prediction for %s — Loss: %.4f, Severity: %s, Result: %s",
+        result["file"], loss_val, result["severity"],
+        "ANOMALY" if result["is_anomaly"] else "NORMAL",
     )
 
     return result

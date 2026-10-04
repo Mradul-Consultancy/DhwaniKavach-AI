@@ -1,12 +1,13 @@
 """
-Acoustic Machine Fault Detection and Monitoring System — Web Dashboard Backend (v2).
+DhwaniKavach AI (ध्वनिकवच) — Industrial Acoustic Diagnostics & Anomaly Detection Backend (v2).
 
 Professional-grade Flask application with:
 - Single file and batch audio analysis
 - Microphone recording support
+- Multi-band frequency diagnostic localization (Low, Mid, High bands)
+- Dynamic baseline calibration and Edge ONNX deployment
 - Model performance evaluation (ROC, Confusion Matrix, Precision/Recall)
-- Interactive threshold analysis
-- Training history visualization
+- Interactive threshold analysis and industrial telemetry alerts
 """
 
 import base64
@@ -35,6 +36,10 @@ sys.path.insert(0, PROJECT_ROOT)
 from src import config
 from src.models.autoencoder import AutoEncoder
 from src.data.preprocessing import load_audio, waveform_to_spectrogram
+from src.inference.diagnostics import IndustrialDiagnosticEngine, SeverityLevel
+from src.inference.calibration import ThresholdCalibrator
+from src.inference.alerts import IndustrialAlertDispatcher
+from src.inference.edge_onnx import export_to_onnx, EdgeONNXPredictor
 
 # ── Logging ──────────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -67,11 +72,22 @@ PLOT_STYLE = {
 # ── Global State ─────────────────────────────────────────────────────────────
 model = None
 model_loaded = False
+diagnostic_engine = IndustrialDiagnosticEngine(sample_rate=config.SAMPLE_RATE, n_mels=config.N_MELS)
+calibrator = ThresholdCalibrator()
+dispatcher = IndustrialAlertDispatcher(machine_id="CNC-MOTOR-LINE-01")
+edge_predictor = None
+active_threshold = config.ANOMALY_THRESHOLD
+
+# Attempt to load any previously saved calibration
+_saved_cal = calibrator.load_calibration()
+if _saved_cal and "threshold" in _saved_cal:
+    active_threshold = _saved_cal["threshold"]
+    logger.info("Loaded calibrated threshold: %s", active_threshold)
 
 
 def load_model():
     """Load the trained AutoEncoder model."""
-    global model, model_loaded
+    global model, model_loaded, edge_predictor
     try:
         model_path = config.BEST_MODEL_PATH
         if not os.path.exists(model_path):
@@ -81,6 +97,7 @@ def load_model():
         model.load_state_dict(torch.load(model_path, map_location=config.DEVICE))
         model.eval()
         model_loaded = True
+        edge_predictor = EdgeONNXPredictor(fallback_model=model)
         logger.info("Model loaded from %s", model_path)
         return True
     except Exception as e:
@@ -396,8 +413,11 @@ def generate_model_architecture_diagram():
 #   PREDICTION HELPERS
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def _run_inference(file_path):
-    """Run model inference on an audio file. Returns dict with results."""
+def _run_inference(file_path, threshold=None):
+    """Run model inference with industrial multi-band diagnostic analysis."""
+    if threshold is None:
+        threshold = active_threshold
+
     waveform = load_audio(file_path)
     spec = waveform_to_spectrogram(waveform, device=config.DEVICE)
     if spec.shape[0] > 1:
@@ -407,16 +427,21 @@ def _run_inference(file_path):
     with torch.no_grad():
         reconstruction = model(spec_input)
         loss = nn.functional.mse_loss(reconstruction, spec_input)
-        loss_val = loss.item()
-        accuracy = (1 - (loss_val ** 0.5)) * 100
+        loss_val = float(loss.item())
+
+    # Multi-band frequency diagnostic breakdown
+    report = diagnostic_engine.analyze(spec_input, reconstruction, threshold=threshold)
+    report_dict = report.to_dict()
 
     return {
         "waveform": waveform,
         "spec_input": spec_input,
         "reconstruction": reconstruction,
         "loss": loss_val,
-        "accuracy": accuracy,
-        "is_anomaly": loss_val > config.ANOMALY_THRESHOLD,
+        "accuracy": report.accuracy_score,
+        "threshold": threshold,
+        "is_anomaly": loss_val > threshold,
+        "report": report_dict,
     }
 
 
@@ -437,15 +462,17 @@ def health():
         "model_loaded": model_loaded,
         "device": str(config.DEVICE),
         "model_params": param_count,
-        "threshold": config.ANOMALY_THRESHOLD,
+        "threshold": active_threshold,
         "sample_rate": config.SAMPLE_RATE,
         "n_mels": config.N_MELS,
+        "engine_mode": "Industrial-Diagnostics-v2",
+        "edge_ready": edge_predictor is not None,
     })
 
 
 @app.route("/api/predict", methods=["POST"])
 def predict():
-    """Single file anomaly prediction with full visualizations."""
+    """Single file anomaly prediction with industrial diagnostics & telemetry."""
     if not model_loaded:
         return jsonify({"error": "Model not loaded. Train first."}), 503
     if "audio" not in request.files:
@@ -455,21 +482,35 @@ def predict():
     if audio_file.filename == "":
         return jsonify({"error": "Empty filename."}), 400
 
+    custom_thresh = request.form.get("threshold")
+    thresh_val = float(custom_thresh) if custom_thresh else active_threshold
+
     suffix = os.path.splitext(audio_file.filename)[1] or ".wav"
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
     try:
         audio_file.save(tmp.name)
         tmp.close()
 
-        result = _run_inference(tmp.name)
+        result = _run_inference(tmp.name, threshold=thresh_val)
+        report = result["report"]
+
+        # Industrial telemetry & alerting
+        telemetry_info = dispatcher.dispatch(report, filename=audio_file.filename)
 
         return jsonify({
             "filename": audio_file.filename,
             "loss": round(result["loss"], 6),
             "accuracy": round(result["accuracy"], 2),
-            "threshold": config.ANOMALY_THRESHOLD,
+            "threshold": thresh_val,
             "is_anomaly": result["is_anomaly"],
-            "verdict": "ANOMALY" if result["is_anomaly"] else "NORMAL",
+            "verdict": report["severity"],
+            "severity": report["severity"],
+            "severity_color": report["severity_color"],
+            "status_summary": report["status_summary"],
+            "recommended_action": report["recommended_action"],
+            "dominant_band": report["dominant_fault_band"],
+            "band_analysis": report["band_analysis"],
+            "telemetry": telemetry_info,
             "device": str(config.DEVICE),
             "images": {
                 "waveform": generate_waveform_image(result["waveform"]),
@@ -493,13 +534,16 @@ def predict():
 
 @app.route("/api/predict-batch", methods=["POST"])
 def predict_batch():
-    """Batch prediction on multiple uploaded files."""
+    """Batch prediction on multiple uploaded files with industrial grading."""
     if not model_loaded:
         return jsonify({"error": "Model not loaded."}), 503
 
     files = request.files.getlist("audio")
     if not files:
         return jsonify({"error": "No files provided."}), 400
+
+    custom_thresh = request.form.get("threshold")
+    thresh_val = float(custom_thresh) if custom_thresh else active_threshold
 
     results = []
     for audio_file in files:
@@ -508,13 +552,16 @@ def predict_batch():
         try:
             audio_file.save(tmp.name)
             tmp.close()
-            r = _run_inference(tmp.name)
+            r = _run_inference(tmp.name, threshold=thresh_val)
+            rep = r["report"]
             results.append({
                 "filename": audio_file.filename,
                 "loss": round(r["loss"], 6),
                 "accuracy": round(r["accuracy"], 2),
                 "is_anomaly": r["is_anomaly"],
-                "verdict": "ANOMALY" if r["is_anomaly"] else "NORMAL",
+                "verdict": rep["severity"],
+                "severity_color": rep["severity_color"],
+                "dominant_band": rep["dominant_fault_band"],
             })
         except Exception as e:
             results.append({
@@ -529,12 +576,58 @@ def predict_batch():
 
     return jsonify({
         "results": results,
-        "threshold": config.ANOMALY_THRESHOLD,
+        "threshold": thresh_val,
         "total": len(results),
         "anomalies": sum(1 for r in results if r.get("is_anomaly")),
         "normal": sum(1 for r in results if not r.get("is_anomaly") and "error" not in r),
         "errors": sum(1 for r in results if "error" in r),
     })
+
+
+@app.route("/api/calibrate", methods=["POST"])
+def calibrate_threshold():
+    """
+    Dynamically calibrate the anomaly threshold from baseline normal loss samples.
+    """
+    global active_threshold
+    data = request.get_json() or {}
+    normal_losses = data.get("losses", [])
+    method = data.get("method", "sigma")
+    k = float(data.get("k", 3.0))
+
+    if not normal_losses:
+        return jsonify({"error": "No baseline losses provided for calibration."}), 400
+
+    try:
+        calib_stats = calibrator.calibrate(normal_losses, method=method, k=k)
+        active_threshold = calib_stats["threshold"]
+        return jsonify({
+            "success": True,
+            "new_threshold": active_threshold,
+            "statistics": calib_stats,
+        })
+    except Exception as e:
+        return jsonify({"error": f"Calibration failed: {str(e)}"}), 500
+
+
+@app.route("/api/export-onnx", methods=["POST"])
+def export_onnx_endpoint():
+    """Export the currently active PyTorch model to ONNX format for Edge deployment."""
+    if not model_loaded:
+        return jsonify({"error": "Model not loaded."}), 503
+
+    try:
+        path = export_to_onnx(model)
+        size_kb = round(os.path.getsize(path) / 1024, 2)
+        return jsonify({
+            "success": True,
+            "onnx_path": path,
+            "size_kb": size_kb,
+            "message": "ONNX model ready for Edge Runtime deployment.",
+        })
+    except Exception as e:
+        logger.error("ONNX export failed: %s", e)
+        return jsonify({"error": f"ONNX export failed: {str(e)}"}), 500
 
 
 @app.route("/api/evaluate", methods=["POST"])

@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Launch Acoustic Machine Fault Detection and Monitoring System Dashboard")
+    parser = argparse.ArgumentParser(description="Launch DhwaniKavach AI (ध्वनिकवच) Industrial Dashboard")
     parser.add_argument(
         "--host", type=str, default="127.0.0.1",
         help="Host to bind to (default: 127.0.0.1)",
@@ -45,7 +45,7 @@ def main():
     create_app()
 
     logger.info("=" * 60)
-    logger.info("  Acoustic Machine Fault Detection and Monitoring System Dashboard")
+    logger.info("  DhwaniKavach AI (ध्वनिकवच) — Industrial Diagnostic Dashboard")
     logger.info("  Open: http://%s:%d", args.host, args.port)
     logger.info("=" * 60)
 

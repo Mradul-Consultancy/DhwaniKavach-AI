@@ -1,1 +1,1 @@
-"""Acoustic Machine Fault Detection and Monitoring System - Anomaly detection in machine sounds using autoencoders."""
+"""DhwaniKavach AI (ध्वनिकवच) — Industrial Acoustic Anomaly Detection & Predictive Maintenance."""
